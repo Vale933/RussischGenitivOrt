@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Genitiv-Quiz mit Leaderboard</title>
+<style>
+  body { font-family: Arial, sans-serif; }
+  .container { width: 90%; max-width: 600px; margin: auto; padding-top: 20px; }
+  .question { margin-bottom: 20px; }
+  #leaderboard { margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <label for="username">Benutzername:</label>
+  <input type="text" id="username" />
+  <button onclick="startQuiz()">Quiz starten</button>
+
+  <div id="quiz" style="display: none;"></div>
+  <button onclick="submitAnswers()" style="display: none;">Antworten überprüfen</button>
+  <div id="result"></div>
+  <div id="leaderboard"></div>
+</div>
+
+<script>
+const questions = [
+  { question: "Выберите правильную форму генитива: Мы идем в ______ (школа).", answers: ["школы", "школу", "школ"], correct: 0 },
+  { question: "Как правильно? Я живу рядом с ______ (парк).", answers: ["парка", "парку", "парком"], correct: 0 },
+  { question: "Выберите форму в генитиве: Они пришли из ______ (музей).", answers: ["музея", "музею", "музей"], correct: 0 },
+  { question: "Какой формы генитив правильный? Она стоит у ______ (окно).", answers: ["окна", "окно", "окну"], correct: 0 },
+  { question: "Выберите правильную форму генитива: До ______ (станция) пять минут пешком.", answers: ["станции", "станция", "станцию"], correct: 0 }
+];
+let username = '';
+
+function startQuiz() {
+  username = document.getElementById('username').value;
+  if (!username) {
+    alert('Bitte gib einen Benutzernamen ein.');
+    return;
+  }
+  document.getElementById('quiz').style.display = 'block';
+  document.getElementById('username').style.display = 'none';
+  document.querySelector('button[onclick="startQuiz()"]').style.display = 'none';
+  document.querySelector('button[onclick="submitAnswers()"]').style.display = 'inline';
+  displayQuestions();
+}
+
+function displayQuestions() {
+  const quizContainer = document.getElementById('quiz');
+  quizContainer.innerHTML = ''; // Clear previous questions if any
+  questions.forEach((q, index) => {
+    const questionEl = document.createElement('div');
+    questionEl.classList.add('question');
+    questionEl.innerHTML = `<p>${q.question}</p>
+      ${q.answers.map((answer, i) => `<label><input type="radio" name="question${index}" value="${i}"> ${answer}</label>`).join('<br>')}`;
+    quizContainer.appendChild(questionEl);
+  });
+}
+
+function submitAnswers() {
+  let score = 0;
+  questions.forEach((q, index) => {
+    const selectedAnswer = document.querySelector(`input[name="question${index}"]:checked`);
+    if(selectedAnswer && parseInt(selectedAnswer.value) === q.correct) {
+      score++;
+    }
+  });
+  document.getElementById('result').textContent = `Du hast ${score} von ${questions.length} Fragen richtig.`;
+  document.querySelector('button[onclick="submitAnswers()"]').style.display = 'none'; // Hide the button again
+  updateLeaderboard(username, score);
+  displayLeaderboard();
+}
+
+function updateLeaderboard(username, score) {
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+  const userIndex = leaderboard.findIndex(entry => entry.username === username);
+  if(userIndex > -1) {
+    if(score > leaderboard[userIndex].score) {
+      leaderboard[userIndex].score = score; // Update score if better
+    }
+  } else {
+    leaderboard.push({ username, score });
+  }
+  localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+}
+
+function displayLeaderboard() {
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+  leaderboard.sort((a, b) => b.score - a.score);
+  const leaderboardEl = document.getElementById('leaderboard');
+  leaderboardEl.innerHTML = '<h2>Leaderboard</h2>' + leaderboard.map(entry => `<p>${entry.username}: ${entry.score}</p>`).join('');
+}
+
+</script>
+</body>
+</html>
